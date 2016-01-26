@@ -28,6 +28,8 @@
 
 #pragma mark - UI事件
 - (IBAction)startClick:(UIBarButtonItem *)sender {
+    _centralManager = nil;
+    _log.text = nil;
     //创建中心设备管理器并设置当前控制器视图为代理
     _centralManager=[[CBCentralManager alloc]initWithDelegate:self queue:nil];
 }
@@ -124,8 +126,8 @@
         [self writeToLog:[NSString stringWithFormat:@"外围设备寻找服务过程中发生错误，错误信息：%@",error.localizedDescription]];
     }
     //遍历查找到的服务
-    CBUUID *serviceUUID=[CBUUID UUIDWithString:kServiceUUID];
-    CBUUID *characteristicUUID=[CBUUID UUIDWithString:kCharacteristicUUID];
+//    CBUUID *serviceUUID=[CBUUID UUIDWithString:kServiceUUID];
+//    CBUUID *characteristicUUID=[CBUUID UUIDWithString:kCharacteristicUUID];
     for (CBService *service in peripheral.services) {
 //        if([service.UUID isEqual:serviceUUID]){
 //            //外围设备查找指定服务中的特征
