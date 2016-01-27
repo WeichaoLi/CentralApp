@@ -45,7 +45,7 @@
 //中心服务器状态更新后
 -(void)centralManagerDidUpdateState:(CBCentralManager *)central{
     switch (central.state) {
-        case CBPeripheralManagerStatePoweredOn:
+        case CBCentralManagerStatePoweredOn:
             NSLog(@"BLE已打开.");
             [self writeToLog:@"BLE已打开."];
             //扫描外围设备
@@ -109,8 +109,8 @@
     NSLog(@"连接已断开，重新连接");
     [self writeToLog:@"连接已断开，重新连接"];
     if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0) {
-//        NSUUID *uuid = [[NSUUID alloc] initWithUUIDString:];
-        [_centralManager retrievePeripheralsWithIdentifiers:@[self.peripheral.identifier]];
+//        [_centralManager retrievePeripheralsWithIdentifiers:@[self.peripheral.identifier]];
+        [_centralManager scanForPeripheralsWithServices:nil options:@{CBCentralManagerScanOptionAllowDuplicatesKey:@YES}];
     }else {
         
     }
@@ -221,8 +221,10 @@
  *
  *  @param info 日志信息
  */
--(void)writeToLog:(NSString *)info{
+-(void)writeToLog:(NSString *)info {
     self.log.text=[NSString stringWithFormat:@"%@\r\n%@",self.log.text,info];
+    CGRect rect = CGRectMake(0, self.log.contentSize.height - 20, self.log.frame.size.width, self.log.frame.size.height);
+    [self.log scrollRectToVisible:rect animated:YES];
 }
 
 @end
