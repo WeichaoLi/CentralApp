@@ -31,7 +31,8 @@
     _centralManager = nil;
     _log.text = nil;
     //创建中心设备管理器并设置当前控制器视图为代理
-    _centralManager=[[CBCentralManager alloc]initWithDelegate:self queue:nil];
+    dispatch_queue_t queue = dispatch_queue_create("初始化中心设备", DISPATCH_QUEUE_SERIAL);
+    _centralManager=[[CBCentralManager alloc]initWithDelegate:self queue:queue];
 }
 
 - (IBAction)sendData:(id)sender {
@@ -50,7 +51,13 @@
             [self writeToLog:@"BLE已打开."];
             //扫描外围设备
 //            [central scanForPeripheralsWithServices:@[[CBUUID UUIDWithString:kServiceUUID]] options:@{CBCentralManagerScanOptionAllowDuplicatesKey:@YES}];
-            [central scanForPeripheralsWithServices:nil options:@{CBCentralManagerScanOptionAllowDuplicatesKey:@YES}];
+            /**
+             *  CBCentralManagerScanOptionAllowDuplicatesKey 是否重复扫描设备
+             */
+            [central scanForPeripheralsWithServices:nil options:@{
+                                                                  CBCentralManagerScanOptionAllowDuplicatesKey: @NO,
+//                                                                  CBCentralManagerScanOptionSolicitedServiceUUIDsKey: @NO
+                                                                  }];
             break;
             
         default:
@@ -108,12 +115,21 @@
 - (void)centralManager:(CBCentralManager *)central didDisconnectPeripheral:(CBPeripheral *)peripheral error:(NSError *)error {
     NSLog(@"连接已断开，重新连接");
     [self writeToLog:@"连接已断开，重新连接"];
-    if ([[[UIDevice currentDevice] systemVersion] floatValue] >= 7.0) {
+    
 //        [_centralManager retrievePeripheralsWithIdentifiers:@[self.peripheral.identifier]];
-        [_centralManager scanForPeripheralsWithServices:nil options:@{CBCentralManagerScanOptionAllowDuplicatesKey:@YES}];
-    }else {
-        
-    }
+//    NSLog(@"%@", [_centralManager retrievePeripheralsWithIdentifiers:@[self.peripheral.identifier]]);
+    NSArray *peripherals = [_centralManager retrievePeripheralsWithIdentifiers:@[self.peripheral.identifier]];
+//    [_centralManager retrieveConnectedPeripheralsWithServices:@[[CBUUID UUIDWithNSUUID:self.peripheral.identifier]]];
+    
+    [peripherals enumerateObjectsUsingBlock:^(id  _Nonnull obj, NSUInteger idx, BOOL * _Nonnull stop) {
+        if (obj == self.peripheral) {
+            [_centralManager connectPeripheral:self.peripheral options:nil];
+            return;
+        }
+    }];
+    
+    // 没有恢复连接，重新扫描
+    [_centralManager scanForPeripheralsWithServices:nil options:@{CBCentralManagerScanOptionAllowDuplicatesKey:@YES}];
 }
 
 #pragma mark - CBPeripheral 代理方法
@@ -222,9 +238,11 @@
  *  @param info 日志信息
  */
 -(void)writeToLog:(NSString *)info {
-    self.log.text=[NSString stringWithFormat:@"%@\r\n%@",self.log.text,info];
-    CGRect rect = CGRectMake(0, self.log.contentSize.height - 20, self.log.frame.size.width, self.log.frame.size.height);
-    [self.log scrollRectToVisible:rect animated:YES];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.log.text=[NSString stringWithFormat:@"%@\r\n%@",self.log.text,info];
+//        CGRect rect = CGRectMake(0, self.log.contentSize.height - 20, self.log.frame.size.width, self.log.frame.size.height);
+//        [self.log scrollRectToVisible:rect animated:YES];
+    });
 }
 
 @end
